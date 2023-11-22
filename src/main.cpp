@@ -121,7 +121,7 @@ void setup() {
   display.clearDisplay();
   
   display.display();
-  delay(500); // Pause for 2 seconds
+  delay(500);
   display.setTextSize(2);
   display.setTextColor(WHITE);
   display.setRotation(2);
@@ -151,7 +151,7 @@ void setup() {
               NULL,         // Parameter to pass to function
               1,            // Task priority (0 to configMAX_PRIORITIES - 1)
               NULL,         // Task handle
-              app_cpu);     // Run on one core for demo purposes (ESP32 only)
+              NULL);     // Run on one core for demo purposes (ESP32 only)
   
   xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               walk,  // Function to be called
@@ -160,7 +160,7 @@ void setup() {
               NULL,         // Parameter to pass to function
               1,            // Task priority (0 to configMAX_PRIORITIES - 1)
               NULL,         // Task handle
-              app_cpu);     // Run on one core for demo purposes (ESP32 only)
+              NULL);     // Run on one core for demo purposes (ESP32 only)
 
 xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               Eat,  // Function to be called
@@ -169,7 +169,7 @@ xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               NULL,         // Parameter to pass to function
               1,            // Task priority (0 to configMAX_PRIORITIES - 1)
               NULL,         // Task handle
-              app_cpu);     // Run on one core for demo purposes (ESP32 only)
+              NULL);     // Run on one core for demo purposes (ESP32 only)
 
   xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               Bath,  // Function to be called
@@ -178,7 +178,7 @@ xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               NULL,         // Parameter to pass to function
               1,            // Task priority (0 to configMAX_PRIORITIES - 1)
               NULL,         // Task handle
-              app_cpu);     // Run on one core for demo purposes (ESP32 only)
+              NULL);     // Run on one core for demo purposes (ESP32 only)
 
   xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               Botones,  // Function to be called
@@ -187,7 +187,7 @@ xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               NULL,         // Parameter to pass to function
               1,            // Task priority (0 to configMAX_PRIORITIES - 1)
               NULL,         // Task handle
-              app_cpu);     // Run on one core for demo purposes (ESP32 only)
+              NULL);     // Run on one core for demo purposes (ESP32 only)
 
 
   // If this was vanilla FreeRTOS, you'd want to call vTaskStartScheduler() in
