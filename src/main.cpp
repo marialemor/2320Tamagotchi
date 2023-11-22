@@ -12,6 +12,11 @@
 #include <WiFi.h>
 #include "time.h"
 
+//botones con el numero de pin 
+const int pinBotonWalk = 2;
+const int pinBotonBath = 3;
+const int pinBotonEat = 3;
+
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 Adafruit_MPU6050 mpu;
 
@@ -36,6 +41,10 @@ const int   daylightOffset_sec = 3600;
 
 void walk(void *parameter) {
   while(1) {
+  if (digitalRead(pinBotonWalk) == LOW) {
+  
+  //Realizar tarea walk    
+
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
@@ -62,8 +71,14 @@ void walk(void *parameter) {
   display.print("Steps:\n ");
   display.println(pasos);
 
+
+  vTaskDelay(500 / portTICK_PERIOD_MS); // Debouncing para evitar lecturas erróneas debido a rebotes
+    }
+  vTaskDelay(10 / portTICK_PERIOD_MS);
   }
+
 }
+
 
 void InitPant(void *pvParameters) {
   (void)pvParameters;
@@ -75,23 +90,35 @@ void InitPant(void *pvParameters) {
 void Bath(void *pvParameters) {
   (void)pvParameters;
   while(1) {
+
+  if (digitalRead(pinBotonBath) == LOW) {
+
+  //Realizar tarea Bath
     
+
+  
+  vTaskDelay(500 / portTICK_PERIOD_MS); // Debouncing para evitar lecturas erróneas debido a rebotes
+    }
+  vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
 void Eat(void *pvParameters) {
   (void)pvParameters;
   while(1) {
+
+  if (digitalRead(pinBotonEat) == LOW) {
+
+  //Realizar tarea Eat 
+
+  
     
+  vTaskDelay(500 / portTICK_PERIOD_MS); // Debouncing para evitar lecturas erróneas debido a rebotes
+    }
+  vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
-void Botones(void *pvParameters) {
-  (void)pvParameters;
-  while(1) {
-    
-  }
-}
 
 void time_count(void *pvParameters) {
   (void)pvParameters;
