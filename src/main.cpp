@@ -7,6 +7,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "queue.h"
+
 #include "Adafruit_MPU6050.h"
 
 #include <WiFi.h>
@@ -119,6 +121,21 @@ void Eat(void *pvParameters) {
   }
 }
 
+void Botton(){
+  while(1) {
+    if (digitalRead(pinBotonBath) == LOW) {
+
+
+    if (digitalRead(pinBotonEat) == LOW) {
+
+    if (digitalRead(pinBotonWalk) == LOW) {
+
+    }
+    }
+}
+  }
+}
+
 
 void time_count(void *pvParameters) {
   (void)pvParameters;
@@ -137,6 +154,10 @@ void time_count(void *pvParameters) {
 
 void setup() {
   Serial.begin(9600);
+
+
+  queueBotton= xQueueCreate(1,sizeof(unit32_t));
+
 
   // Initialize the display
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
