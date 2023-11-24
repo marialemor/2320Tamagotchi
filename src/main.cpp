@@ -19,12 +19,6 @@ int pasos = 0;
 int iniciar = 0; 
 int contar = 0;
 
-// Use only core 1 for demo purposes
-#if CONFIG_FREERTOS_UNICORE
-static const BaseType_t app_cpu = 0;
-#else
-static const BaseType_t app_cpu = 1;
-#endif
 
 const char* ssid       = "Mariayo";
 const char* password   = "M4R14L3J4";
@@ -188,7 +182,6 @@ xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               1,            // Task priority (0 to configMAX_PRIORITIES - 1)
               NULL,         // Task handle
               NULL);     // Run on one core for demo purposes (ESP32 only)
-
 
   // If this was vanilla FreeRTOS, you'd want to call vTaskStartScheduler() in
   // main after setting up your tasks.
