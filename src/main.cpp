@@ -1,14 +1,9 @@
 #include <Arduino.h>
-
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-#include "queue.h"
-
 #include "Adafruit_MPU6050.h"
 
 #include <WiFi.h>
@@ -18,6 +13,8 @@
 const int pinBotonWalk = 2;
 const int pinBotonBath = 3;
 const int pinBotonEat = 3;
+
+QueueHandle_t queueBotton;
 
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 Adafruit_MPU6050 mpu;
@@ -67,66 +64,40 @@ void walk(void *parameter) {
   display.print("Steps:\n ");
   display.println(pasos);
 
+}}}
 
-  vTaskDelay(500 / portTICK_PERIOD_MS); // Debouncing para evitar lecturas erróneas debido a rebotes
-    }
-  vTaskDelay(10 / portTICK_PERIOD_MS);
-  }
-
-}
-
-
-void InitPant(void *pvParameters) {
-  (void)pvParameters;
+void Pant(void *pvParameters){
   while(1) {
     
   }
 }
 
-void Bath(void *pvParameters) {
-  (void)pvParameters;
+void Eat(void *pvParameters){
   while(1) {
-
-  if (digitalRead(pinBotonBath) == LOW) {
-
-  //Realizar tarea Bath
-    
-
   
-  vTaskDelay(500 / portTICK_PERIOD_MS); // Debouncing para evitar lecturas erróneas debido a rebotes
-    }
-  vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
-void Eat(void *pvParameters) {
-  (void)pvParameters;
+void Bath(void *pvParameters){
   while(1) {
 
-  if (digitalRead(pinBotonEat) == LOW) {
-
-  //Realizar tarea Eat 
-
-  
-    
-  vTaskDelay(500 / portTICK_PERIOD_MS); // Debouncing para evitar lecturas erróneas debido a rebotes
-    }
-  vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
-void Botton(){
+
+
+void Botton(void *pvParameters){
   while(1) {
     if (digitalRead(pinBotonBath) == LOW) {
-
-
-    if (digitalRead(pinBotonEat) == LOW) {
-
-    if (digitalRead(pinBotonWalk) == LOW) {
-
     }
+
+    else if (digitalRead(pinBotonEat) == LOW) {
+    
     }
-}
+
+    else if (digitalRead(pinBotonWalk) == LOW) {
+    }
+
   }
 }
 
@@ -150,7 +121,7 @@ void setup() {
   Serial.begin(9600);
 
 
-  queueBotton= xQueueCreate(1,sizeof(unit32_t));
+  queueBotton = xQueueCreate(1,sizeof(3));
 
 
   // Initialize the display
@@ -187,7 +158,7 @@ void setup() {
   Serial.println(" CONNECTED");
 
   xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
-              InitPant,  // Function to be called
+              Pant,  // Function to be called
               "Inicializar Pantalla",   // Name of task
               4096,         // Stack size (bytes in ESP32, words in FreeRTOS)
               NULL,         // Parameter to pass to function
@@ -223,7 +194,7 @@ xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               NULL);     // Run on one core for demo purposes (ESP32 only)
 
   xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
-              Botones,  // Function to be called
+              Botton,  // Function to be called
               "Botones",   // Name of task
               4096,         // Stack size (bytes in ESP32, words in FreeRTOS)
               NULL,         // Parameter to pass to function
