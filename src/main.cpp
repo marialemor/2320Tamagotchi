@@ -5,7 +5,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "Adafruit_MPU6050.h"
-
 #include <WiFi.h>
 #include "time.h"
 
@@ -23,6 +22,10 @@ int pasos = 0;
 int iniciar = 0; 
 int contar = 0;
 
+// Stats de la mascota
+float hunger = 100;
+float fun = 100;
+float bath = 100;
 
 const char* ssid       = "Mariayo";
 const char* password   = "M4R14L3J4";
@@ -31,71 +34,96 @@ const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
 
-
-void walk(void *parameter) {
-  while(1) {
-  if (digitalRead(pinBotonWalk) == LOW) {
-  
-  //Realizar tarea walk    
-
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
-
-  if (a.acceleration.y < -8.0){
-    iniciar = 0;
-    pasos = 0;
-  }
-  if (a.acceleration.x > 8.0){
-    if(iniciar==0){
-    }
-    iniciar = 1;
-    
-  }
-  if (iniciar == 1){ 
-    if (contar == 0 && a.acceleration.y > 9){
-        pasos = pasos + 1;
-        contar=1;    
-    }
-    if (contar==1 && (a.acceleration.y) < 9 ){
-        contar = 0;    
-    }
-    
-  }
-  display.print("Steps:\n ");
-  display.println(pasos);
-
-}}}
-
 void Pant(void *pvParameters){
+
   while(1) {
     
   }
 }
 
-void Eat(void *pvParameters){
+void walk(void *parameter) {
+  int buttonReceived = 0;
+
   while(1) {
+
+    if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
+      if (buttonReceived == 1){
+        
+        sensors_event_t a, g, temp;
+        mpu.getEvent(&a, &g, &temp);
+
+        if (a.acceleration.y < -8.0){
+          iniciar = 0;
+          pasos = 0;
+        }
+        if (a.acceleration.x > 8.0){
+          if(iniciar==0){
+          }
+          iniciar = 1;
+          
+        }
+        if (iniciar == 1){ 
+          if (contar == 0 && a.acceleration.y > 9){
+              pasos = pasos + 1;
+              contar=1;    
+          }
+          if (contar==1 && (a.acceleration.y) < 9 ){
+              contar = 0;    
+          }
+          
+        }
+        display.print("Steps:\n ");
+        display.println(pasos);
+      }
+    }
+
+}}
+
+void Eat(void *pvParameters){
+  int buttonReceived = 0;
+
+  while(1) {
+
+    if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
+      if (buttonReceived == 2){
+        //task
+      }
+    }
   
   }
 }
 
 void Bath(void *pvParameters){
+  int buttonReceived = 0;
+
   while(1) {
+    if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
+      if (buttonReceived == 3){
+        //task
+      }
+    }
 
   }
 }
 
-
-
 void Botton(void *pvParameters){
+
   while(1) {
     if (digitalRead(pinBotonBath) == LOW) {
+      int dataButton = 1;
+      xQueueSend(queueBotton,&dataButton,  portMAX_DELAY);
+
     }
 
     else if (digitalRead(pinBotonEat) == LOW) {
+      int dataButton = 2;
+      xQueueSend(queueBotton,&dataButton,  portMAX_DELAY);
     
     }
 
     else if (digitalRead(pinBotonWalk) == LOW) {
+      int dataButton = 3;
+      xQueueSend(queueBotton,&dataButton,  portMAX_DELAY);
     }
 
   }
