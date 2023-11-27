@@ -15,7 +15,7 @@
 
 QueueHandle_t queueBotton;
 
-const unsigned char main_image [] = {
+const unsigned char main_image [] PROGMEM = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -464,12 +464,13 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.display();
   delay(200);
-  display.setRotation(1);
+  display.setRotation(2);
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.print("INIT");
+  display.drawBitmap(0, 0, bath_image, 128, 64,1);
+  display.invertDisplay(true);
   display.display();
   delay(200);
 
@@ -499,7 +500,7 @@ void setup() {
   xTaskCreate(Pant," Pantalla", 4096, NULL, 1, NULL);  
   xTaskCreate(Eat," Eat", 4096, NULL, 1, NULL); 
   xTaskCreate(walk," walk", 4096, NULL, 1, NULL); 
-  xTaskCreate(Bath," Bath", 4096, NULL, 1, NULL); 
+  xTaskCreate(Bath," Bath", 8096, NULL, 1, NULL); 
   xTaskCreate(Barras," Barras", 4096, NULL, 1, NULL); 
 
   vTaskStartScheduler();
