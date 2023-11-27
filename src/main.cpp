@@ -129,7 +129,6 @@ void Botton(void *pvParameters){
   }
 }
 
-
 void time_count(void *pvParameters) {
   (void)pvParameters;
   while(1) {
@@ -142,6 +141,13 @@ void time_count(void *pvParameters) {
     }
     Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     
+  }
+}
+
+void Barras(void *pvParameters) {
+  (void)pvParameters;
+  while(1) {
+    //task
   }
 }
 
@@ -224,6 +230,15 @@ xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
   xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
               Botton,  // Function to be called
               "Botones",   // Name of task
+              4096,         // Stack size (bytes in ESP32, words in FreeRTOS)
+              NULL,         // Parameter to pass to function
+              1,            // Task priority (0 to configMAX_PRIORITIES - 1)
+              NULL,         // Task handle
+              NULL);     // Run on one core for demo purposes (ESP32 only)
+
+    xTaskCreatePinnedToCore(  // Use xTaskCreate() in vanilla FreeRTOS
+              Barras,  // Function to be called
+              "Barras",   // Name of task
               4096,         // Stack size (bytes in ESP32, words in FreeRTOS)
               NULL,         // Parameter to pass to function
               1,            // Task priority (0 to configMAX_PRIORITIES - 1)
