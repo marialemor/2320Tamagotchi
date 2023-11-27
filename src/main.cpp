@@ -222,7 +222,7 @@ void setup() {
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
   //Cola para botones
-  queueBotton = xQueueCreate(20,sizeof(int));
+  queueBotton = xQueueCreate(50,sizeof(int));
 
   //Creacion de los tasks
   xTaskCreate(Pant," Pantalla", 4096, NULL, 1, NULL);  
