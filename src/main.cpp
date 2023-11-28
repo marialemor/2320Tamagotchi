@@ -14,7 +14,6 @@
 #include <freertos/queue.h>
 
 //Animaciones
-
 const unsigned char main_image [] = {
 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -300,9 +299,9 @@ Adafruit_MPU6050 mpu;
 
 //pines de los botones
 
-#define EatButton 5
+#define EatButton 19
 #define WalkButton 18
-#define BathButton 19
+#define BathButton 5
 #define WIRE Wire
 
 //cola
@@ -326,29 +325,62 @@ float hunger = 100;
 float fun = 100;
 float bath = 100;
 
+
 void Pant(void *pvParameters){
-
-  while(1) {
-    display.clearDisplay();
-    display.setTextSize(2);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.drawBitmap(0, 0, main_image, 128, 64,1);
-    display.invertDisplay(true);
-    display.display();
-    delay(200);
-
-  }
-}
-
-void walk(void *parameter) {
   int buttonReceived = 0;
-
+  int dataMENU = 0;
   while(1) {
 
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
+        if (buttonReceived == 1){
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.drawBitmap(0, 0, eat_image, 128, 64,1);
+        display.invertDisplay(true);
+        display.display(); 
+        delay(2000);
+        xQueueSend(queueBotton, &dataMENU, portMAX_DELAY); 
+        }
+        else if (buttonReceived == 2){
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.drawBitmap(0, 0, walk_image, 128, 64,1);
+        display.invertDisplay(true);
+        display.display();
+        delay(2000);
+        xQueueSend(queueBotton, &dataMENU, portMAX_DELAY); 
+
+        }
+
+        else if (buttonReceived == 3){
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.drawBitmap(0, 0, bath_image, 128, 64,1);
+        display.invertDisplay(true);
+        display.display();
+        delay(2000);
+        xQueueSend(queueBotton, &dataMENU, portMAX_DELAY); 
+        }
+        else if (buttonReceived == 0){
+          display.clearDisplay();
+          display.setTextSize(0.5);
+          display.setCursor(0, 0);
+          display.drawBitmap(0, 0, main_image, 128, 64,1);
+          display.invertDisplay(true);
+          display.display();
+          delay(2000);
+    }
+    }
+    }
+  }
+
+
+void walk(void *parameter) { 
+  int buttonReceived = 0;
+
+  while(1) {
+    if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 2){
-        
         sensors_event_t a, g, temp;
         mpu.getEvent(&a, &g, &temp);
 
@@ -365,6 +397,7 @@ void walk(void *parameter) {
         if (iniciar == 1){ 
           if (contar == 0 && a.acceleration.y > 9){
               pasos = pasos + 1;
+              hunger += pasos*2;
               contar=1;    
           }
           if (contar==1 && (a.acceleration.y) < 9 ){
@@ -372,57 +405,44 @@ void walk(void *parameter) {
           }
           
         }
-        display.print("Steps:\n ");
-        display.println(pasos);
       }
+      } 
     }
-    vTaskDelay(pdMS_TO_TICKS(500));
-}}
+}
 
 void Eat(void *pvParameters){
   int buttonReceived = 0;
-
   while(1) {
-
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 1){
-        display.clearDisplay();
-        display.setCursor(0, 0);
-        display.drawBitmap(0, 0, eat_image, 128, 64,1);
-        display.invertDisplay(true);
-        display.display();
+        //task
       }
     }
-    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
 
 void Bath(void *pvParameters){
   int buttonReceived = 0;
-
   while(1) {
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
-
       if (buttonReceived == 3){
-        
-        display.clearDisplay();
-        display.setCursor(0, 0);
-        display.drawBitmap(0, 0, bath_image, 128, 64,1);
-        display.invertDisplay(true);
-        display.display();
-
+        //task
       }
-
     }
-    vTaskDelay(pdMS_TO_TICKS(2000));
   }
+}
+
+void Indi(void *pvParameters){
+  hunger -= 1;
+  fun -= 1;
+  bath -= 1;  
 }
 
 void Eat_Interrupt()
 {
   static unsigned long e_last_interrupt_time = 0;
   unsigned long e_interrupt_time = millis();
-  if (e_interrupt_time - e_last_interrupt_time > 200)
+  if (e_interrupt_time - e_last_interrupt_time > 100)
   {
       int dataEat = 1;
       xQueueSend(queueBotton, &dataEat, portMAX_DELAY);
@@ -434,7 +454,7 @@ void Walk_Interrupt()
 {
   static unsigned long w_last_interrupt_time = 0;
   unsigned long w_interrupt_time = millis();
-  if (w_interrupt_time - w_last_interrupt_time > 200)
+  if (w_interrupt_time - w_last_interrupt_time > 100)
   {
       int dataWalk = 2;
       xQueueSend(queueBotton, &dataWalk, portMAX_DELAY);
@@ -447,11 +467,10 @@ void Bath_Interrupt()
 {
   static unsigned long b_last_interrupt_time = 0;
   unsigned long b_interrupt_time = millis();
-  if (b_interrupt_time - b_last_interrupt_time > 200)
+  if (b_interrupt_time - b_last_interrupt_time > 100)
   {
       int dataBath = 3;
       xQueueSend(queueBotton, &dataBath, portMAX_DELAY);
-    
   }
   b_last_interrupt_time = b_interrupt_time;
 }
@@ -468,11 +487,19 @@ void setup() {
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
+  display.setCursor(5, 0);
+  display.println("Bienvenido");
+  display.display();
+  delay(1000);
+  display.clearDisplay();
+  display.clearDisplay();
+  display.setTextSize(0.5);
   display.setCursor(0, 0);
   display.drawBitmap(0, 0, main_image, 128, 64,1);
   display.invertDisplay(true);
   display.display();
-  delay(200);
+  delay(1000);
+
 
 
   // Pines para botones
@@ -490,12 +517,15 @@ void setup() {
   //Cola para botones
   queueBotton = xQueueCreate(50,sizeof(int));
 
+  //Semaforo comer
+
   //Creacion de los tasks
   xTaskCreate(Pant," Pantalla", 8096, NULL, 1, NULL);  
   xTaskCreate(Eat," Eat", 4096, NULL, 1, NULL); 
   xTaskCreate(walk," walk", 4096, NULL, 1, NULL); 
   xTaskCreate(Bath," Bath", 4069, NULL, 1, NULL); 
-  //xTaskCreate(Barras," Barras", 8096, NULL, 1, NULL); 
+  //xTaskCreate(Indi,"Indicadores", 8096, NULL, 1, NULL); 
+
 }
 
 void loop() {
