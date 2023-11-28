@@ -13,7 +13,7 @@
 #include <freertos/semphr.h>
 #include <freertos/queue.h>
 
-QueueHandle_t queueBotton;
+//Animaciones
 
 const unsigned char main_image [] = {
 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -290,27 +290,31 @@ const unsigned char eat_image [] = {
 //parametros de la pantalla
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64 
+#define WIRE Wire
 
-#define OLED_RESET     -1 
 #define SCREEN_ADDRESS 0x3C 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+Adafruit_SSD1306 display = Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &WIRE);
 
 //parametros del MPU
 Adafruit_MPU6050 mpu;
 
 //pines de los botones
-const int BathButton = 18;
-const int EatButton = 5;
-const int WalkButton = 19;
 
+#define EatButton 5
+#define WalkButton 18
+#define BathButton 19
+#define WIRE Wire
+
+//cola
+
+QueueHandle_t queueBotton;
+
+// funciones
 void Pant(void *pvParameters);
+void Bath(void *pvParameters);
 void Eat(void *pvParameters);
 void walk(void *pvParameters);
-void Bath(void *pvParameters);
-void time_count(void *pvParameters);
-void Barras(void *pvParameters);
 
-#define WIRE Wire
 
 //parametros para caminar
 int pasos = 0;
@@ -326,10 +330,13 @@ void Pant(void *pvParameters){
 
   while(1) {
     display.clearDisplay();
-    display.setCursor(0,0);
-    display.println("MENU");
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.drawBitmap(0, 0, main_image, 128, 64,1);
+    display.invertDisplay(true);
     display.display();
-    delay(2000);
+    delay(200);
 
   }
 }
@@ -340,7 +347,7 @@ void walk(void *parameter) {
   while(1) {
 
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
-      if (buttonReceived == 1){
+      if (buttonReceived == 2){
         
         sensors_event_t a, g, temp;
         mpu.getEvent(&a, &g, &temp);
@@ -369,7 +376,7 @@ void walk(void *parameter) {
         display.println(pasos);
       }
     }
-
+    vTaskDelay(pdMS_TO_TICKS(500));
 }}
 
 void Eat(void *pvParameters){
@@ -378,14 +385,15 @@ void Eat(void *pvParameters){
   while(1) {
 
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
-      if (buttonReceived == 2){
-        display.setCursor(0,0);
-        display.println("eat");
-        display.display();
+      if (buttonReceived == 1){
         display.clearDisplay();
-        //task
+        display.setCursor(0, 0);
+        display.drawBitmap(0, 0, eat_image, 128, 64,1);
+        display.invertDisplay(true);
+        display.display();
       }
     }
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
 
@@ -394,77 +402,60 @@ void Bath(void *pvParameters){
 
   while(1) {
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
+
       if (buttonReceived == 3){
-        display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-        display.display();
-        delay(200);
-        display.setRotation(2);
+        
         display.clearDisplay();
-        display.setTextSize(2);
-        display.setTextColor(SSD1306_WHITE);
         display.setCursor(0, 0);
         display.drawBitmap(0, 0, bath_image, 128, 64,1);
         display.invertDisplay(true);
         display.display();
-        delay(200);
-      }
-    }
 
+      }
+
+    }
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
 
 void Eat_Interrupt()
 {
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > 500)
+  static unsigned long e_last_interrupt_time = 0;
+  unsigned long e_interrupt_time = millis();
+  if (e_interrupt_time - e_last_interrupt_time > 200)
   {
       int dataEat = 1;
       xQueueSend(queueBotton, &dataEat, portMAX_DELAY);
   }
-  last_interrupt_time = interrupt_time;
+  e_last_interrupt_time = e_interrupt_time;
 }
 
 void Walk_Interrupt()
 {
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > 500)
+  static unsigned long w_last_interrupt_time = 0;
+  unsigned long w_interrupt_time = millis();
+  if (w_interrupt_time - w_last_interrupt_time > 200)
   {
       int dataWalk = 2;
       xQueueSend(queueBotton, &dataWalk, portMAX_DELAY);
     
   }
-  last_interrupt_time = interrupt_time;
+  w_last_interrupt_time = w_interrupt_time;
 }
 
 void Bath_Interrupt()
 {
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > 500)
+  static unsigned long b_last_interrupt_time = 0;
+  unsigned long b_interrupt_time = millis();
+  if (b_interrupt_time - b_last_interrupt_time > 200)
   {
       int dataBath = 3;
       xQueueSend(queueBotton, &dataBath, portMAX_DELAY);
     
   }
-  last_interrupt_time = interrupt_time;
+  b_last_interrupt_time = b_interrupt_time;
 }
 
-
-void time_count(void *pvParameters) {
-  
-  while(1) {
-    Serial.print("time");
-  }
-}
-
-void Barras(void *pvParameters) {
-  
-  while(1) {
-    //task
-  }
-}
 
 void setup() {
   Serial.begin(9600);
@@ -483,21 +474,15 @@ void setup() {
   display.display();
   delay(200);
 
-  //pines de los botones
 
+  // Pines para botones
+  pinMode(EatButton, INPUT_PULLUP);
   pinMode(WalkButton, INPUT_PULLUP);
   pinMode(BathButton, INPUT_PULLUP);
-  pinMode(EatButton, INPUT_PULLUP);
 
+  attachInterrupt(digitalPinToInterrupt(EatButton), Eat_Interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(WalkButton), Walk_Interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(BathButton), Bath_Interrupt, FALLING);
-  attachInterrupt(digitalPinToInterrupt(EatButton), Eat_Interrupt, FALLING);
-
-  if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
-  }
-  
-  Serial.println("MPU6050 Found!");
 
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
@@ -509,10 +494,8 @@ void setup() {
   xTaskCreate(Pant," Pantalla", 8096, NULL, 1, NULL);  
   xTaskCreate(Eat," Eat", 4096, NULL, 1, NULL); 
   xTaskCreate(walk," walk", 4096, NULL, 1, NULL); 
-  xTaskCreate(Bath," Bath", 8096, NULL, 1, NULL); 
-  xTaskCreate(Barras," Barras", 4096, NULL, 1, NULL); 
-
-  vTaskStartScheduler();
+  xTaskCreate(Bath," Bath", 4069, NULL, 1, NULL); 
+  //xTaskCreate(Barras," Barras", 8096, NULL, 1, NULL); 
 }
 
 void loop() {
