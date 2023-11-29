@@ -312,6 +312,7 @@ QueueHandle_t queueWalk;
 
 //Semaforo para actualizar datos
 SemaphoreHandle_t dataSema;
+SemaphoreHandle_t barraSema;
 
 
 // funciones
@@ -332,6 +333,11 @@ int shake = 0;
 int hunger = 100;
 int fun = 100;
 int bath = 100;
+
+
+int one = 0;
+int two = 0;
+int three = 0;
 
 
 void Pant(void *pvParameters){
@@ -371,15 +377,27 @@ void Pant(void *pvParameters){
           display.setCursor(0, 0);
           display.drawBitmap(0, 0, main_image, 128, 64,1);
 
-          display.drawRect(12, 10, 7, 20,SSD1306_WHITE);//FUN
-          display.fillRect(12, 10, 7, 20,SSD1306_WHITE);
+          xSemaphoreTake(barraSema,portMAX_DELAY);
+          one = round((fun*20)/100);
+          two = round((hunger*20)/100);
+          three = round((bath*20)/100);
 
-          display.drawRect(24, 10, 7, 20,SSD1306_WHITE);//EAT	
-          display.fillRect(24, 10, 7, 20,SSD1306_WHITE);
+          Serial.println("------------");
+          Serial.println(one);
+          Serial.println(two);
+          Serial.println(three);
 
-          display.drawRect(36, 10, 7, 20,SSD1306_WHITE);//BATH
-          display.fillRect(36, 10, 7, 20,SSD1306_WHITE);
-          
+          xSemaphoreGive(barraSema);
+
+          display.drawRect(12, 10, 7, one,SSD1306_WHITE);//FUN
+          display.fillRect(12, 10, 7, one,SSD1306_WHITE);
+
+          display.drawRect(24, 10, 7, two,SSD1306_WHITE);//EAT	
+          display.fillRect(24, 10, 7, two,SSD1306_WHITE);
+
+          display.drawRect(36, 10, 7, three,SSD1306_WHITE);//BATH
+          display.fillRect(36, 10, 7, three,SSD1306_WHITE);
+
           display.invertDisplay(true);
           display.display();
     }
@@ -472,6 +490,9 @@ void Indi(void *pvParameters){
     hunger -= 1;
     fun -= 1;
     bath -= 1;
+    Serial.println(hunger);
+    Serial.println(bath);
+    Serial.println(fun);
     xSemaphoreGive(dataSema);
     vTaskDelay(pdMS_TO_TICKS(10000)); 
   }
@@ -569,9 +590,10 @@ void setup() {
 
   //Semaforo comer
   dataSema = xSemaphoreCreateMutex();
+  barraSema = xSemaphoreCreateMutex();
 
   //Creacion de los tasks
-  xTaskCreate(Pant," Pantalla", 2048, NULL, 1, NULL);  
+  xTaskCreate(Pant," Pantalla", 8096, NULL, 1, NULL);  
   xTaskCreate(Eat," Eat", 4096, NULL, 1, NULL); 
   xTaskCreate(walk," walk", 4096, NULL, 1, NULL); 
   xTaskCreate(Bath," Bath", 4069, NULL, 1, NULL); 
