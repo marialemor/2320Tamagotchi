@@ -494,6 +494,8 @@ void Indi(void *pvParameters){
     Serial.println(bath);
     Serial.println(fun);
     xSemaphoreGive(dataSema);
+    int data1 = 0;
+    xQueueSend(queueBotton, &data1, portMAX_DELAY);
     vTaskDelay(pdMS_TO_TICKS(10000)); 
   }
 }
