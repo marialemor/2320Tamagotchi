@@ -378,7 +378,6 @@ Adafruit_MPU6050 mpu;
 //cola boton
 QueueHandle_t queueBotton;
 QueueHandle_t queueComida;
-QueueHandle_t queueBath;
 QueueHandle_t queueWalk;
 
 //Semaforo para actualizar datos
@@ -400,9 +399,9 @@ int contar = 0;
 int shake = 0;
 
 // Stats de la mascota
-int hunger = 100;
-int fun = 90;
-int bath = 80;
+int hunger = 60;
+int fun = 80;
+int bath = 50;
 
 
 int one = 0;
@@ -425,7 +424,7 @@ void Pant(void *pvParameters){
         display.display(); 
         int dateat = 1;
         xQueueSend(queueComida, &dateat, portMAX_DELAY);
-        delay(1000);
+        delay(3000);
         int data1 = 0;
         xQueueSend(queueBotton, &data1, portMAX_DELAY);
 
@@ -447,6 +446,7 @@ void Pant(void *pvParameters){
         display.drawBitmap(0, 0, bath_image, 128, 64,1);
         display.invertDisplay(true);
         display.display();
+
         }
         else if (buttonReceived == 0){
           display.clearDisplay();
@@ -455,15 +455,16 @@ void Pant(void *pvParameters){
           display.drawBitmap(0, 0, main_image, 128, 64,1);
 
           xSemaphoreTake(barraSema,portMAX_DELAY);
-          one = round((fun*20)/100);
-          two = round((hunger*20)/100);
-          three = round((bath*20)/100);
-
-          Serial.println("------------");
-          Serial.println(one);
-          Serial.println(two);
-          Serial.println(three);
-
+          if (fun > 0 && hunger > 10 && bath > 10){
+            one = round((fun*20)/100);
+            two = round((hunger*20)/100);
+            three = round((bath*20)/100);
+            }
+          else if (fun <= 0 && hunger <= 10 && bath <= 10){
+            one = 0;
+            two = 0;
+            three = 0;
+          }
           xSemaphoreGive(barraSema);
 
           display.drawRect(12, 10, 7, one,SSD1306_WHITE);//FUN
@@ -512,7 +513,7 @@ void walk(void *parameter) {
           if (contar==1 && (a.acceleration.y) < 8 ){
               contar = 0; 
           }
-          if (pasos >= 10 || fun >= 100){
+          if (pasos >= 5 || fun >= 100){
             pasos = 0;
             xQueueSend(queueBotton, &dataSend, portMAX_DELAY);
           }
@@ -529,7 +530,7 @@ void Eat(void *pvParameters){
         
         if (hunger < 90 ){
         xSemaphoreTake(dataSema,portMAX_DELAY);
-        hunger = hunger + 10;
+        hunger = hunger + 20;
         xSemaphoreGive(dataSema);
 
         int dataeat = 0;
@@ -548,20 +549,22 @@ void Bath(void *pvParameters){
       if (buttonReceived == 3){
         sensors_event_t a, g, temp;
         mpu.getEvent(&a, &g, &temp);
+        Serial.println(g.gyro.x);
         
-          if (contar == 0 && a.acceleration.y > 8 && bath<100){
+          if (contar == 0 && g.gyro.x > 1 && bath<100){
               xSemaphoreTake(dataSema,portMAX_DELAY);
               shake = shake + 1;
               bath += shake;
               xSemaphoreGive(dataSema);
               contar=1;  
-              Serial.println(bath);  
+              Serial.print("SHAKES");
+              Serial.println(shake);  
           }
 
-          if (contar==1 && (a.acceleration.y) < 8 ){
+          if (contar==1){
               contar = 0; 
 
-          if (shake==10 || bath == 100){
+          if (shake >=5 || bath >= 100){
               int data3 = 0;
               xQueueSend(queueBotton, &data3, portMAX_DELAY);    
           }
@@ -682,7 +685,6 @@ void setup() {
   queueBotton = xQueueCreate(1,sizeof(int));
   queueComida = xQueueCreate(1,sizeof(int));
   queueWalk = xQueueCreate(1,sizeof(int));
-  queueBath = xQueueCreate(1,sizeof(int));
 
 
   //Semaforo comer
