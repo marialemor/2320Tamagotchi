@@ -338,8 +338,6 @@ void Pant(void *pvParameters){
         display.drawBitmap(0, 0, eat_image, 128, 64,1);
         display.invertDisplay(true);
         display.display(); 
-        delay(2000);
-        xQueueSend(queueBotton, &dataMENU, portMAX_DELAY); 
         }
         else if (buttonReceived == 2){
         display.clearDisplay();
@@ -347,9 +345,6 @@ void Pant(void *pvParameters){
         display.drawBitmap(0, 0, walk_image, 128, 64,1);
         display.invertDisplay(true);
         display.display();
-        delay(2000);
-        xQueueSend(queueBotton, &dataMENU, portMAX_DELAY); 
-
         }
 
         else if (buttonReceived == 3){
@@ -358,8 +353,6 @@ void Pant(void *pvParameters){
         display.drawBitmap(0, 0, bath_image, 128, 64,1);
         display.invertDisplay(true);
         display.display();
-        delay(2000);
-        xQueueSend(queueBotton, &dataMENU, portMAX_DELAY); 
         }
         else if (buttonReceived == 0){
           display.clearDisplay();
@@ -368,7 +361,6 @@ void Pant(void *pvParameters){
           display.drawBitmap(0, 0, main_image, 128, 64,1);
           display.invertDisplay(true);
           display.display();
-          delay(2000);
     }
     }
     }
@@ -391,14 +383,14 @@ void walk(void *parameter) {
         if (a.acceleration.x > 8.0){
           if(iniciar==0){
           }
-          iniciar = 1;
-          
+          iniciar = 1;  
         }
         if (iniciar == 1){ 
           if (contar == 0 && a.acceleration.y > 9){
               pasos = pasos + 1;
               hunger += pasos*2;
-              contar=1;    
+              contar=1;  
+              Serial.println(hunger);  
           }
           if (contar==1 && (a.acceleration.y) < 9 ){
               contar = 0;    
@@ -493,7 +485,6 @@ void setup() {
   delay(1000);
   display.clearDisplay();
   display.clearDisplay();
-  display.setTextSize(0.5);
   display.setCursor(0, 0);
   display.drawBitmap(0, 0, main_image, 128, 64,1);
   display.invertDisplay(true);
@@ -520,7 +511,7 @@ void setup() {
   //Semaforo comer
 
   //Creacion de los tasks
-  xTaskCreate(Pant," Pantalla", 8096, NULL, 1, NULL);  
+  xTaskCreate(Pant," Pantalla", 2048, NULL, 1, NULL);  
   xTaskCreate(Eat," Eat", 4096, NULL, 1, NULL); 
   xTaskCreate(walk," walk", 4096, NULL, 1, NULL); 
   xTaskCreate(Bath," Bath", 4069, NULL, 1, NULL); 
