@@ -422,10 +422,6 @@ const unsigned char sleep_image [] = {
 };
 
 
-
-
-
-
 //parametros de la pantalla
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64 
@@ -448,7 +444,6 @@ Adafruit_MPU6050 mpu;
 QueueHandle_t queueBotton;
 QueueHandle_t queueComida;
 QueueHandle_t queueWalk;
-QueueHandle_t queueSleep;
 
 //Semaforo para actualizar datos
 SemaphoreHandle_t dataSema;
@@ -459,7 +454,6 @@ void Pant(void *pvParameters);
 void Bath(void *pvParameters);
 void Eat(void *pvParameters);
 void walk(void *pvParameters);
-void sleep(void *pvParameters);
 
 
 
@@ -470,10 +464,9 @@ int contar = 0;
 int shake = 0;
 
 // Stats de la mascota
-int hunger = 60;
-int fun = 80;
-int bath = 50;
-int sleepi = 52;
+int hunger = 93;
+int fun = 93;
+int bath = 93;
 
 
 int one = 0;
@@ -483,7 +476,6 @@ int three = 0;
 
 void Pant(void *pvParameters){
   int buttonReceived = 0;
-  int sleepReceived = 0;
 
   while(1) {
 
@@ -522,21 +514,10 @@ void Pant(void *pvParameters){
 
         }
         else if (buttonReceived == 0){
-        display.clearDisplay();
-        display.setCursor(0, 0);
-
-        if (xQueueReceive(queueSleep,&sleepReceived,portMAX_DELAY)){
-          if (sleepReceived == 0){
-
-            display.drawBitmap(0, 0, main_image, 128, 64,1);
-
-          }
-          else if (sleepReceived == 1){
-            display.drawBitmap(0, 0, sleep_image, 128, 64,1);
-          }
-        }
-
-        
+          display.clearDisplay();
+          display.setTextSize(0.5);
+          display.setCursor(0, 0);
+          display.drawBitmap(0, 0, main_image, 128, 64,1);
 
           xSemaphoreTake(barraSema,portMAX_DELAY);
           if (fun > 0 && hunger > 10 && bath > 10){
@@ -568,6 +549,13 @@ void Pant(void *pvParameters){
           display.setTextSize(0.5);
           display.setCursor(0, 0);
           display.drawBitmap(0, 0, death, 128, 64,1);
+          display.display();
+    }
+    else if (buttonReceived == 5){
+          display.clearDisplay();
+          display.setTextSize(0.5);
+          display.setCursor(0, 0);
+          display.drawBitmap(0, 0, sleep_image, 128, 64,1);
           display.display();
     }
     }
@@ -669,32 +657,16 @@ void Indi(void *pvParameters){
       int data1 = 4;
       Serial.println("MUERE");
       xQueueSend(queueBotton, &data1, portMAX_DELAY);
-    } 
+    }
+    else if (hunger >90 && fun >90 && bath >90){
+      Serial.println("duerme");
+      int data1 = 5;
+      xQueueSend(queueBotton, &data1, portMAX_DELAY);
+    }
     else if (hunger >= 0 && fun >= 0 && bath >= 0){
       Serial.println("vive");
       int data1 = 0;
       xQueueSend(queueBotton, &data1, portMAX_DELAY);
-    }
-
-    xSemaphoreGive(dataSema);
-    vTaskDelay(pdMS_TO_TICKS(10000)); 
-  }
-}
-
-void sleep(void *pvParameters){
-  while(1) {
-    xSemaphoreTake(dataSema, portMAX_DELAY);
-    sleepi -=1 ;
-
-    if (sleepi <=20){
-      int data1 = 1;
-      Serial.println("duerme");
-      xQueueSend(queueSleep, &data1, portMAX_DELAY);
-    } 
-    else if (sleepi <=0 || sleepi >=20){
-      Serial.println("despierto");
-      int data1 = 0;
-      xQueueSend(queueSleep, &data1, portMAX_DELAY);
     }
 
     xSemaphoreGive(dataSema);
@@ -790,7 +762,6 @@ void setup() {
   queueBotton = xQueueCreate(1,sizeof(int));
   queueComida = xQueueCreate(1,sizeof(int));
   queueWalk = xQueueCreate(1,sizeof(int));
-  queueSleep = xQueueCreate(1,sizeof(int));
 
 
   //Semaforo comer
@@ -803,7 +774,6 @@ void setup() {
   xTaskCreate(walk," walk", 8096, NULL, 1, NULL); 
   xTaskCreate(Bath," Bath", 8096, NULL, 1, NULL); 
   xTaskCreate(Indi,"Indicadores", 8096, NULL, 1, NULL); 
-  xTaskCreate(sleep,"sleep", 8096, NULL, 1, NULL); 
 
 }
 
