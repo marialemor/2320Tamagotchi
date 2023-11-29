@@ -319,6 +319,7 @@ void walk(void *pvParameters);
 int pasos = 0;
 int iniciar = 0; 
 int contar = 0;
+int shake = 0;
 
 // Stats de la mascota
 float hunger = 100;
@@ -407,7 +408,10 @@ void Eat(void *pvParameters){
   while(1) {
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 1){
-        //task
+        delay(10000);
+        hunger += 10;
+        int data1 = 0;
+      xQueueSend(queueBotton, &data1, portMAX_DELAY);
       }
     }
   }
@@ -418,11 +422,28 @@ void Bath(void *pvParameters){
   while(1) {
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 3){
-        //task
+        sensors_event_t a, g, temp;
+        mpu.getEvent(&a, &g, &temp);
+        
+          if (contar == 0 && a.acceleration.y > 9){
+              shake = shake + 1;
+              bath += shake;
+              contar=1;  
+              Serial.println(bath);  
+          }
+
+          if (contar==1 && (a.acceleration.y) < 9 ){
+              contar = 0; 
+
+          if (shake==10){
+              int data3 = 0;
+              xQueueSend(queueBotton, &data3, portMAX_DELAY);    
+          }
       }
     }
   }
 }
+
 
 void Indi(void *pvParameters){
   hunger -= 1;
