@@ -487,6 +487,10 @@ void setup() {
   display.drawBitmap(0, 0, main_image, 128, 64,1);
   display.invertDisplay(true);
   display.display();
+  
+  mpu.begin();
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
   // Pines para botones
   pinMode(EatButton, INPUT_PULLUP);
@@ -496,9 +500,6 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(EatButton), Eat_Interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(WalkButton), Walk_Interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(BathButton), Bath_Interrupt, FALLING);
-
-  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
   //Cola para botones
   queueBotton = xQueueCreate(50,sizeof(int));
