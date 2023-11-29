@@ -304,15 +304,18 @@ Adafruit_MPU6050 mpu;
 #define BathButton 5
 #define WIRE Wire
 
-//cola
-
+//cola boton
 QueueHandle_t queueBotton;
+//Semaforo para actualizar datos
+SemaphoreHandle_t dataSema;
+
 
 // funciones
 void Pant(void *pvParameters);
 void Bath(void *pvParameters);
 void Eat(void *pvParameters);
 void walk(void *pvParameters);
+
 
 
 //parametros para caminar
@@ -322,14 +325,14 @@ int contar = 0;
 int shake = 0;
 
 // Stats de la mascota
-float hunger = 100;
-float fun = 100;
-float bath = 100;
+int hunger = 100;
+int fun = 100;
+int bath = 100;
 
 
 void Pant(void *pvParameters){
   int buttonReceived = 0;
-  int dataMENU = 0;
+
   while(1) {
 
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
@@ -370,37 +373,33 @@ void Pant(void *pvParameters){
 
 void walk(void *parameter) { 
   int buttonReceived = 0;
+  int pasos = 0;
+  int iniciar = 0; 
+  int contar = 0;
+  int dataSend = 0;
 
   while(1) {
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 2){
         sensors_event_t a, g, temp;
         mpu.getEvent(&a, &g, &temp);
+        Serial.println(a.acceleration.y);
 
-        if (a.acceleration.y < -8.0){
-          iniciar = 0;
-          pasos = 0;
-        }
-        if (a.acceleration.x > 8.0){
-          if(iniciar==0){
-          }
-          iniciar = 1;  
-        }
-        if (iniciar == 1){ 
-          if (contar == 0 && a.acceleration.y > 9){
+          if (a.acceleration.y > 9 && hunger>100){
               pasos = pasos + 1;
-              hunger += pasos*2;
-              contar=1;  
-              Serial.println(hunger);  
-          }
-          if (contar==1 && (a.acceleration.y) < 9 ){
-              contar = 0;    
+              xSemaphoreTake(dataSema,portMAX_DELAY);
+              fun += pasos; 
+              xSemaphoreGive(dataSema);
+              Serial.println(pasos);  
           }
           
+          if (pasos >= 10){
+            xQueueSend(queueBotton, &dataSend, portMAX_DELAY);
+          }
         }
       }
+      vTaskDelay(pdMS_TO_TICKS(200));
       } 
-    }
 }
 
 void Eat(void *pvParameters){
@@ -446,9 +445,14 @@ void Bath(void *pvParameters){
 
 
 void Indi(void *pvParameters){
-  hunger -= 1;
-  fun -= 1;
-  bath -= 1;  
+  while(1) {
+    xSemaphoreTake(dataSema, portMAX_DELAY);
+    hunger -= 1;
+    fun -= 1;
+    bath -= 1;
+    xSemaphoreGive(dataSema);
+    vTaskDelay(pdMS_TO_TICKS(20000)); 
+  }
 }
 
 void Eat_Interrupt()
@@ -510,9 +514,10 @@ void setup() {
   display.drawBitmap(0, 0, main_image, 128, 64,1);
   display.invertDisplay(true);
   display.display();
-  delay(1000);
-
-
+  
+  mpu.begin();
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 
   // Pines para botones
   pinMode(EatButton, INPUT_PULLUP);
@@ -523,20 +528,18 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(WalkButton), Walk_Interrupt, FALLING);
   attachInterrupt(digitalPinToInterrupt(BathButton), Bath_Interrupt, FALLING);
 
-  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-
   //Cola para botones
   queueBotton = xQueueCreate(50,sizeof(int));
 
   //Semaforo comer
+  dataSema = xSemaphoreCreateMutex();
 
   //Creacion de los tasks
   xTaskCreate(Pant," Pantalla", 2048, NULL, 1, NULL);  
   xTaskCreate(Eat," Eat", 4096, NULL, 1, NULL); 
   xTaskCreate(walk," walk", 4096, NULL, 1, NULL); 
   xTaskCreate(Bath," Bath", 4069, NULL, 1, NULL); 
-  //xTaskCreate(Indi,"Indicadores", 8096, NULL, 1, NULL); 
+  xTaskCreate(Indi,"Indicadores", 8096, NULL, 1, NULL); 
 
 }
 
