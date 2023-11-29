@@ -306,6 +306,10 @@ Adafruit_MPU6050 mpu;
 
 //cola boton
 QueueHandle_t queueBotton;
+QueueHandle_t queueComida;
+QueueHandle_t queueBath;
+QueueHandle_t queueWalk;
+
 //Semaforo para actualizar datos
 SemaphoreHandle_t dataSema;
 
@@ -342,6 +346,9 @@ void Pant(void *pvParameters){
         display.drawBitmap(0, 0, eat_image, 128, 64,1);
         display.invertDisplay(true);
         display.display(); 
+        delay(1000);
+        int data1 = 0;
+        xQueueSend(queueBotton, &data1, portMAX_DELAY);
         }
         else if (buttonReceived == 2){
         display.clearDisplay();
@@ -363,6 +370,16 @@ void Pant(void *pvParameters){
           display.setTextSize(0.5);
           display.setCursor(0, 0);
           display.drawBitmap(0, 0, main_image, 128, 64,1);
+
+          display.drawRect(12, 10, 7, 20,SSD1306_WHITE);//FUN
+          display.fillRect(12, 10, 7, 20,SSD1306_WHITE);
+
+          display.drawRect(24, 10, 7, 20,SSD1306_WHITE);//EAT	
+          display.fillRect(24, 10, 7, 20,SSD1306_WHITE);
+
+          display.drawRect(36, 10, 7, 20,SSD1306_WHITE);//BATH
+          display.fillRect(36, 10, 7, 20,SSD1306_WHITE);
+          
           display.invertDisplay(true);
           display.display();
     }
@@ -372,9 +389,7 @@ void Pant(void *pvParameters){
 
 
 void walk(void *parameter) { 
-  int buttonReceived = 0;
-  int pasos = 0;
-  int iniciar = 0; 
+  int buttonReceived = 0; 
   int contar = 0;
   int dataSend = 0;
 
@@ -385,14 +400,17 @@ void walk(void *parameter) {
         mpu.getEvent(&a, &g, &temp);
         Serial.println(a.acceleration.y);
 
-          if (a.acceleration.y > 9 && hunger>100){
+          if (contar == 0 && a.acceleration.y > 8 && fun<100){
               pasos = pasos + 1;
               xSemaphoreTake(dataSema,portMAX_DELAY);
-              fun += pasos; 
+              fun = fun + pasos; 
               xSemaphoreGive(dataSema);
               Serial.println(pasos);  
           }
-          
+
+          if (contar==1 && (a.acceleration.y) < 8 ){
+              contar = 0; 
+          }
           if (pasos >= 10){
             xQueueSend(queueBotton, &dataSend, portMAX_DELAY);
           }
@@ -407,10 +425,12 @@ void Eat(void *pvParameters){
   while(1) {
     if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 1){
-        delay(10000);
-        hunger += 10;
-        int data1 = 0;
-      xQueueSend(queueBotton, &data1, portMAX_DELAY);
+        
+        if (hunger < 90 ){
+        xSemaphoreTake(dataSema,portMAX_DELAY);
+        hunger = hunger + 10;
+        xSemaphoreGive(dataSema);
+        }
       }
     }
   }
@@ -424,24 +444,26 @@ void Bath(void *pvParameters){
         sensors_event_t a, g, temp;
         mpu.getEvent(&a, &g, &temp);
         
-          if (contar == 0 && a.acceleration.y > 9){
+          if (contar == 0 && a.acceleration.y > 8 && bath<100){
+              xSemaphoreTake(dataSema,portMAX_DELAY);
               shake = shake + 1;
               bath += shake;
+              xSemaphoreGive(dataSema);
               contar=1;  
               Serial.println(bath);  
           }
 
-          if (contar==1 && (a.acceleration.y) < 9 ){
+          if (contar==1 && (a.acceleration.y) < 8 ){
               contar = 0; 
 
-          if (shake==10){
+          if (shake==10 || bath == 100){
               int data3 = 0;
               xQueueSend(queueBotton, &data3, portMAX_DELAY);    
           }
       }
     }
   }
-}
+}}
 
 
 void Indi(void *pvParameters){
@@ -451,7 +473,7 @@ void Indi(void *pvParameters){
     fun -= 1;
     bath -= 1;
     xSemaphoreGive(dataSema);
-    vTaskDelay(pdMS_TO_TICKS(20000)); 
+    vTaskDelay(pdMS_TO_TICKS(10000)); 
   }
 }
 
@@ -512,6 +534,16 @@ void setup() {
   display.clearDisplay();
   display.setCursor(0, 0);
   display.drawBitmap(0, 0, main_image, 128, 64,1);
+
+  display.drawRect(12, 10, 7, 20,SSD1306_WHITE);//FUN
+  display.fillRect(12, 10, 7, 20,SSD1306_WHITE);
+
+  display.drawRect(24, 10, 7, 20,SSD1306_WHITE);//EAT	
+  display.fillRect(24, 10, 7, 20,SSD1306_WHITE);
+
+  display.drawRect(36, 10, 7, 20,SSD1306_WHITE);//BATH
+  display.fillRect(36, 10, 7, 20,SSD1306_WHITE);
+
   display.invertDisplay(true);
   display.display();
   
@@ -529,7 +561,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(BathButton), Bath_Interrupt, FALLING);
 
   //Cola para botones
-  queueBotton = xQueueCreate(50,sizeof(int));
+  queueBotton = xQueueCreate(1,sizeof(int));
+  queueComida = xQueueCreate(1,sizeof(int));
+  queueWalk = xQueueCreate(1,sizeof(int));
+  queueBath = xQueueCreate(1,sizeof(int));
+
 
   //Semaforo comer
   dataSema = xSemaphoreCreateMutex();
