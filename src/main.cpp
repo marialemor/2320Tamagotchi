@@ -464,9 +464,9 @@ int contar = 0;
 int shake = 0;
 
 // Stats de la mascota
-int hunger = 93;
-int fun = 93;
-int bath = 93;
+int hunger = 92;
+int fun = 92;
+int bath = 92;
 
 
 int one = 0;
@@ -602,7 +602,7 @@ void Eat(void *pvParameters){
         
         if (hunger < 90 ){
         xSemaphoreTake(dataSema,portMAX_DELAY);
-        hunger = hunger + 20;
+        hunger = hunger + 5;
         xSemaphoreGive(dataSema);
 
         int dataeat = 0;
