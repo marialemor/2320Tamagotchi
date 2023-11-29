@@ -331,7 +331,7 @@ int shake = 0;
 
 // Stats de la mascota
 int hunger = 100;
-int fun = 100;
+int fun = 95;
 int bath = 100;
 
 
@@ -352,9 +352,13 @@ void Pant(void *pvParameters){
         display.drawBitmap(0, 0, eat_image, 128, 64,1);
         display.invertDisplay(true);
         display.display(); 
+        int dateat = 1;
+        xQueueSend(queueComida, &dateat, portMAX_DELAY);
+
         delay(1000);
         int data1 = 0;
         xQueueSend(queueBotton, &data1, portMAX_DELAY);
+
         }
         else if (buttonReceived == 2){
         display.clearDisplay();
@@ -362,6 +366,9 @@ void Pant(void *pvParameters){
         display.drawBitmap(0, 0, walk_image, 128, 64,1);
         display.invertDisplay(true);
         display.display();
+
+        int datwalk = 2;
+        xQueueSend(queueWalk, &datwalk, portMAX_DELAY);
         }
 
         else if (buttonReceived == 3){
@@ -412,7 +419,7 @@ void walk(void *parameter) {
   int dataSend = 0;
 
   while(1) {
-    if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
+    if (xQueueReceive(queueWalk,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 2){
         sensors_event_t a, g, temp;
         mpu.getEvent(&a, &g, &temp);
@@ -423,31 +430,35 @@ void walk(void *parameter) {
               xSemaphoreTake(dataSema,portMAX_DELAY);
               fun = fun + pasos; 
               xSemaphoreGive(dataSema);
+              Serial.print("PASOS");
               Serial.println(pasos);  
           }
 
           if (contar==1 && (a.acceleration.y) < 8 ){
               contar = 0; 
           }
-          if (pasos >= 10){
+          if (pasos >= 10 || fun >= 100){
+            pasos = 0;
             xQueueSend(queueBotton, &dataSend, portMAX_DELAY);
           }
         }
       }
-      vTaskDelay(pdMS_TO_TICKS(200));
       } 
 }
 
 void Eat(void *pvParameters){
   int buttonReceived = 0;
   while(1) {
-    if (xQueueReceive(queueBotton,&buttonReceived,portMAX_DELAY)){
+    if (xQueueReceive(queueComida,&buttonReceived,portMAX_DELAY)){
       if (buttonReceived == 1){
         
         if (hunger < 90 ){
         xSemaphoreTake(dataSema,portMAX_DELAY);
         hunger = hunger + 10;
         xSemaphoreGive(dataSema);
+        int dataeat = 0;
+        xQueueSend(queueComida,&dataeat,portMAX_DELAY);
+
         }
       }
     }
